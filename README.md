@@ -1,2 +1,5 @@
 # XInputInjectDLL
-XInput inject DLL
+EN: Intercepting the XInputGetState function and changing its state. It is introduced into the game with using any DLL injector.
+
+
+RU: Перехват функции XInputGetState и изменения её состояния. Внедряется в игру с помощью любого DLL injector-а.
