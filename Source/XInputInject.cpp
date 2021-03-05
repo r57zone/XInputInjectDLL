@@ -53,6 +53,7 @@ typedef DWORD(WINAPI *XINPUTGETSTATE)(DWORD, XINPUT_STATE*);
 // Pointer for calling original
 static XINPUTGETSTATE hookedXInputGetState = nullptr;
 
+
 // wrapper for easier setting up hooks for MinHook
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
@@ -69,22 +70,28 @@ inline MH_STATUS MH_CreateHookApiEx(LPCWSTR pszModule, LPCSTR pszProcName, LPVOI
 //Own GetState
 DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
-
-	// first call the original function
+	//MessageBox(0, "XinputGetSate", "XINPUT", MB_OK);
+	
 	//ZeroMemory(pState, sizeof(XINPUT_STATE));
+	
+	// first call the original function
 	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
 	
 	//Any pState change
-	
+
 	//Sample 1
 	//pState->Gamepad.sThumbRX = 0;
 	//pState->Gamepad.sThumbRY = 0;
+
 	
-	//Sample 2
+	//pState change
+	//pState->Gamepad.sThumbRX = 0;
+	//pState->Gamepad.sThumbRY = 0;
+
 	//if (pState->Gamepad.bLeftTrigger > 200) {
 		//pState->Gamepad.wButtons = 0x1000;
-		//pState->Gamepad.bLeftTrigger = 0;
-	//}
+		//State->Gamepad.bLeftTrigger = 0;
+	}//
 		
 	return toReturn;
 }
@@ -95,15 +102,14 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 )
 {
 	switch (ul_reason_for_call){
-		case DLL_PROCESS_ATTACH:
-		{
+		case DLL_PROCESS_ATTACH: {
 			MessageBox(0, "Attached", "XINPUT", MB_OK);
 
 			if (MH_Initialize() == MH_OK)
 				MessageBox(0, "Initialized ok", "XINPUT", MB_OK);
 
 			//1.0
-			if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+			if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetStateEx", &detourXInputGetState, &hookedXInputGetState) == MH_OK) //Ex! - Bulletstorm (2011)
 				MessageBox(0, "Detour XInputGetState 9_1_0", "XINPUT", MB_OK);
 
 			//1_1
@@ -127,29 +133,27 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 					MessageBox(0, "Detour XInputGetState 1_4", "XINPUT", MB_OK);
 
 
+			//if (MH_EnableHook(&detourXInputGetState) == MH_OK) //Not working
 			if (MH_EnableHook(MH_ALL_HOOKS) == MH_OK)
 				MessageBox(0, "XInput hooked", "XINPUT", MB_OK);
-			else
-				MessageBox(0, "Fail XInput hook", "XINPUT", MB_OK);
 
 
 			break;
 		}
 
 		/*case DLL_THREAD_ATTACH:
-		{
-			MessageBox(0, "THREAD_ATTACH", "XINPUT", MB_OK);
-			break;
-		}
+			{
+				MessageBox(0, "THREAD_ATTACH", "XINPUT", MB_OK);
+				break;
+			}
 
 		case DLL_THREAD_DETACH:
-		{
+			{
 			MessageBox(0, "THREAD_DETACH", "XINPUT", MB_OK);
 			break;
 		}*/
 
-		case DLL_PROCESS_DETACH:
-		{
+		case DLL_PROCESS_DETACH: {
 			//MessageBox(0, "PROCESS_DETACH", "XINPUT", MB_OK);
 			MH_DisableHook(&detourXInputGetState);
 			MH_Uninitialize();
